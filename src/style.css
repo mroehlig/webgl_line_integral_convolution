@@ -8,10 +8,32 @@ body {
   z-index: 0;
 }
 
-#canvas {
+#canvas_wrapper {
+  margin-right: 10px;
+  width: 800px;
+  height: 800px;
+}
+
+/* #canvas {
   position: absolute;
   width: 100vw;
   height: 100vh;
   display: block;
   z-index: 1;
+} */
+
+#canvas {
+  position: absolute;
+  width: inherit;
+  height: inherit;
+  z-index: 1;
+  border: solid 1px black;
+}
+
+#overlay {
+  position: absolute;
+  width: inherit;
+  height: inherit;
+  z-index: 2;
+  pointer-events: none;
 }
