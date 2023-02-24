@@ -2,6 +2,7 @@
 
 import * as THREE from "three";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
+import Stats from "three/examples/jsm/libs/stats.module.js";
 import WebGL from "three/examples/jsm/capabilities/WebGL.js";
 
 import { Parameters } from "./parameter";
@@ -9,8 +10,8 @@ import { loadData } from "./data";
 import Field from "./field";
 import Particles from "./particle";
 
-import VertexShaderSource from "./shaders/lic.vs";
-import FragmentShaderSource from "./shaders/lic.fs";
+import VertexShaderSource from "./shaders/field.vs";
+import FragmentShaderSource from "./shaders/field.fs";
 
 import "./style.css";
 
@@ -21,74 +22,75 @@ let camera;
 let scene;
 let quad;
 let field;
-let fieldResized;
 let particles;
+let stats;
 
 // Render the scene.
 function render(time, lastTime) {
-  if (field) {
-    // Update.
-    let dt = time - lastTime;
-    particles.update(fieldResized, dt / 5000);
+  stats.begin();
 
-    // Compute frame rate.
-    let fps = 1000 / (time - lastTime);
-    Parameters.fps = fps.toFixed(2);
+  // Update.
+  let dt = time - lastTime;
+  particles.update(field, dt / 1000, Parameters.particleSpeed);
 
-    // Render.
-    renderer.render(scene, camera);
+  // Render.
+  renderer.render(scene, camera);
 
-    // Render overlay.
-    overlay.clearRect(0, 0, overlay.canvas.width, overlay.canvas.height);
-    overlay.fillStyle = "white";
-    overlay.font = "20px monospace";
-    overlay.fillText("Particles: " + particles.length, 10, 30);
-    overlay.fillText("FPS: " + Parameters.fps, 10, 60);
+  // Render overlay.
+  overlay.clearRect(0, 0, overlay.canvas.width, overlay.canvas.height);
+  overlay.fillStyle = "white";
+  overlay.font = "20px monospace";
+  overlay.fillText("Particles: " + particles.length, 10, 30);
 
-    // Render particles.
-    overlay.fillStyle = "red";
-    for (let i = 0; i < particles.length; i++) {
-      let particle = particles.get(i);
-      overlay.beginPath();
+  // Render particles.
+  let particleColor = new THREE.Color(Parameters.particleColor);
+  let particleCssColor = `rgba(${particleColor.r * 255}, ${
+    particleColor.g * 255
+  }, ${particleColor.b * 255}, ${Parameters.particleOpacity})`;
 
-      // Fill.
-      overlay.fillStyle = "red";
-      overlay.arc(
-        particle[0] * overlay.canvas.width,
-        (1 - particle[1]) * overlay.canvas.height,
-        5,
-        0,
-        2 * Math.PI
+  for (let i = 0; i < particles.length; i++) {
+    let particle = particles.get(i);
+    overlay.beginPath();
+
+    // Fill.
+    overlay.fillStyle = particleCssColor;
+    overlay.arc(
+      particle[0] * overlay.canvas.width,
+      (1 - particle[1]) * overlay.canvas.height,
+      Parameters.particleSize,
+      0,
+      2 * Math.PI
+    );
+    overlay.fill();
+
+    // Outline.
+    overlay.strokeStyle = `rgba(0, 0, 0, ${Parameters.particleOpacity})`;
+    overlay.lineWidth = 1;
+    overlay.stroke();
+
+    // History.
+    let history = particles.getHistory(i);
+    overlay.beginPath();
+
+    // Move to the first point according to the history index.
+    let index = particles.historyIndex;
+    overlay.moveTo(
+      history[index][0] * overlay.canvas.width,
+      (1 - history[index][1]) * overlay.canvas.height
+    );
+    for (let j = 1; j < history.length; j++) {
+      let k = (index + j) % history.length;
+      overlay.lineTo(
+        history[k][0] * overlay.canvas.width,
+        (1 - history[k][1]) * overlay.canvas.height
       );
-      overlay.fill();
-
-      // Outline.
-      overlay.strokeStyle = "black";
-      overlay.lineWidth = 1;
-      overlay.stroke();
-
-      // History.
-      let history = particles.getHistory(i);
-      overlay.beginPath();
-
-      // Move to the first point according to the history index.
-      let index = particles.historyIndex;
-      overlay.moveTo(
-        history[index][0] * overlay.canvas.width,
-        (1 - history[index][1]) * overlay.canvas.height
-      );
-      for (let j = 1; j < history.length; j++) {
-        let k = (index + j) % history.length;
-        overlay.lineTo(
-          history[k][0] * overlay.canvas.width,
-          (1 - history[k][1]) * overlay.canvas.height
-        );
-      }
-      overlay.strokeStyle = "rgba(255, 0, 0, 0.5)";
-      overlay.lineWidth = 2;
-      overlay.stroke();
     }
+    overlay.strokeStyle = particleCssColor;
+    overlay.lineWidth = Parameters.particleTrailWidth;
+    overlay.stroke();
   }
+
+  stats.end();
 
   // Repaint.
   repaint(time);
@@ -120,26 +122,23 @@ function resize() {
 function updateData(data, width, height) {
   // Create and update the field.
   field = new Field(data, width, height);
-  updateTexture(field.data, width, height);
-
-  resizeField(Parameters.scale);
+  updateTexture(field.data, width, height, Parameters.fieldSampling);
 }
 
 // Generate a field.
 function generateData(type) {
   // Create and update the field.
-  field = Field.generate(
-    type,
-    Parameters.defaultFieldSize,
-    Parameters.defaultFieldSize
+  field = Field.generate(type, Parameters.fieldSize, Parameters.fieldSize);
+  updateTexture(
+    field.data,
+    field.width,
+    field.height,
+    Parameters.fieldSampling
   );
-  updateTexture(field.data, field.width, field.height);
-
-  resizeField(Parameters.scale);
 }
 
 // Update the texture.
-function updateTexture(data, width, height) {
+function updateTexture(data, width, height, sampling = "nearest") {
   // Create the texture.
   let texture = new THREE.DataTexture(
     new Float32Array(data.flat()),
@@ -148,15 +147,41 @@ function updateTexture(data, width, height) {
     THREE.RGFormat,
     THREE.FloatType
   );
-  // texture.minFilter = THREE.LinearFilter;
-  // texture.magFilter = THREE.LinearFilter;
-  // texture.wrapS = THREE.ClampToEdgeWrapping;
-  // texture.wrapT = THREE.ClampToEdgeWrapping;
-  texture.needsUpdate = true;
 
   // Update the quad.
   quad.material.uniforms.field.value = texture;
-  quad.material.needsUpdate = true;
+  updateTextureSampling(sampling);
+}
+
+// Update texture sampling.
+function updateTextureSampling(sampling) {
+  let texture = quad.material.uniforms.field.value;
+
+  switch (sampling.toUpperCase()) {
+    case "NEAREST":
+      texture.minFilter = THREE.NearestFilter;
+      texture.magFilter = THREE.NearestFilter;
+      break;
+    case "LINEAR":
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      break;
+    default:
+      break;
+  }
+
+  texture.needsUpdate = true;
+}
+
+// Update uniforms.
+function updateUniforms() {
+  // Update glyph parameters.
+  quad.material.uniforms.glyph_grid_size.value = Parameters.glyphGridSize;
+  quad.material.uniforms.glyph_size.value = Parameters.glyphSize;
+  quad.material.uniforms.glyph_alpha.value = Parameters.glyphOpacity;
+  quad.material.uniforms.glyph_color.value = new THREE.Color(
+    Parameters.glyphColor
+  );
 }
 
 // Resize the field.
@@ -165,8 +190,8 @@ function resizeField(scale) {
   let height = Math.round(field.height * scale);
 
   // Create and update the field.
-  fieldResized = field.resize(width, height);
-  updateTexture(fieldResized.data, width, height);
+  field = field.resize(width, height);
+  updateTexture(field.data, width, height, Parameters.fieldSampling);
 }
 
 // Initialize.
@@ -212,6 +237,10 @@ function init() {
       fragmentShader: FragmentShaderSource,
       uniforms: {
         field: { value: null },
+        glyph_grid_size: { value: Parameters.glyphGridSize },
+        glyph_size: { value: Parameters.glyphSize },
+        glyph_alpha: { value: Parameters.glyphOpacity },
+        glyph_color: { value: new THREE.Color(Parameters.glyphColor) },
       },
       depthWrite: false,
       depthTest: false,
@@ -223,25 +252,104 @@ function init() {
   const gui = new GUI();
   let dataFolder = gui.addFolder("Data");
   dataFolder
-    .add(Parameters, "generatableFields", [...Parameters.generatableFields])
-    .setValue(Parameters.generatedField)
-    .name("Generate")
-    .onChange((name) => generateData(name));
-  dataFolder
-    .add(Parameters, "dataset", [...Parameters.datasets])
+    .add(Parameters, "datasets", [...Parameters.datasets])
     .setValue(Parameters.dataset)
-    .name("Load")
-    .onChange((name) => loadData(Parameters.folder + name, updateData));
+    .name("Generate")
+    .onChange((name) => {
+      Parameters.dataset = name;
+      generateData(name);
+    });
+  dataFolder
+    .add(Parameters, "fieldSize", 1, 500)
+    .step(1)
+    .setValue(Parameters.fieldSize)
+    .name("Size")
+    .onChange((size) => {
+      Parameters.fieldSize = size;
+      generateData(Parameters.dataset);
+    });
 
-  // Add controls for scaling the field.
-  gui
-    .add(Parameters, "scale", 0.1, 4.0)
-    .step(0.125)
-    .name("Scale")
-    .onChange(resizeField);
+  // Field controls.
+  let fieldFolder = gui.addFolder("Field");
+  fieldFolder
+    .add(Parameters, "fieldSampling", ["Nearest", "Linear"])
+    .setValue(Parameters.fieldSampling)
+    .name("Sampling")
+    .onChange((sampling) => {
+      Parameters.fieldSampling = sampling;
+      updateTextureSampling(sampling);
+    });
 
-  // Load the data.
-  loadData(Parameters.folder + Parameters.dataset, updateData);
+  // Glyph controls.
+  let glyphFolder = gui.addFolder("Glyphs");
+  glyphFolder
+    .add(Parameters, "glyphGridSize", 1, 100)
+    .step(1)
+    .setValue(Parameters.glyphGridSize)
+    .name("Grid size")
+    .onChange((size) => {
+      Parameters.glyphGridSize = size;
+      updateUniforms();
+    });
+  glyphFolder
+    .add(Parameters, "glyphSize", 0.0, 1.0)
+    .step(0.01)
+    .setValue(Parameters.glyphSize)
+    .name("Size")
+    .onChange((size) => {
+      Parameters.glyphSize = size;
+      updateUniforms();
+    });
+  glyphFolder
+    .addColor(Parameters, "glyphColor")
+    .name("Color")
+    .onChange((color) => {
+      Parameters.glyphColor = color;
+      updateUniforms();
+    });
+  glyphFolder
+    .add(Parameters, "glyphOpacity", 0.0, 1.0)
+    .step(0.01)
+    .name("Opacity")
+    .onChange((alpha) => {
+      Parameters.glyphOpacity = alpha;
+      updateUniforms();
+    });
+
+  // Particle controls.
+  let particleFolder = gui.addFolder("Particles");
+  particleFolder
+    .add(Parameters, "particleCount", 0, 1000)
+    .step(1)
+    .setValue(Parameters.particleCount)
+    .name("Count")
+    .onChange((count) => (particles = new Particles(count)));
+  particleFolder
+    .add(Parameters, "particleSpeed", 0.0, 10.0)
+    .step(0.01)
+    .setValue(Parameters.particleSpeed)
+    .name("Speed");
+  particleFolder
+    .add(Parameters, "particleSize", 0, 10)
+    .step(0.01)
+    .setValue(Parameters.particleSize)
+    .name("Size");
+  particleFolder.addColor(Parameters, "particleColor").name("Color");
+  particleFolder
+    .add(Parameters, "particleOpacity", 0.0, 1.0)
+    .step(0.01)
+    .name("Opacity");
+  particleFolder
+    .add(Parameters, "particleTrailWidth", 0, 10)
+    .step(0.1)
+    .name("Trail width");
+
+  // Stats.
+  stats = new Stats();
+  document.body.appendChild(stats.dom);
+
+  // Generate the data.
+  generateData(Parameters.dataset);
 
   // Create the particles.
   particles = new Particles(100);

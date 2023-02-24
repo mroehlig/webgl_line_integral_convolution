@@ -16,14 +16,14 @@ module.exports = {
       inject: "body",
       favicon: "./src/assets/favicon.ico",
     }),
-    new CopyPlugin({
-      patterns: [
-        {
-          from: "./src/assets/data/*.*",
-          to: "assets/data/[name][ext]",
-        },
-      ],
-    }),
+    // new CopyPlugin({
+    //   patterns: [
+    //     {
+    //       from: "./src/assets/data/*.*",
+    //       to: "assets/data/[name][ext]",
+    //     },
+    //   ],
+    // }),
   ],
   module: {
     rules: [

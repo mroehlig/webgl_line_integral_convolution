@@ -56,7 +56,7 @@ export default class Particles {
   }
 
   // Update the particles.
-  update(field, dt) {
+  update(field, dt, speed = 1.0) {
     // Update the particles.
     for (let i = 0; i < this.length; i++) {
       let particle = this.get(i);
@@ -68,14 +68,14 @@ export default class Particles {
       );
 
       // Update the particle's position.
-      let x = particle[0] + vector[0] * dt;
-      let y = particle[1] + vector[1] * dt;
+      let x = particle[0] + vector[0] * dt * speed;
+      let y = particle[1] + vector[1] * dt * speed;
       let dx = x - particle[0];
       let dy = y - particle[1];
       let dist = dx * dx + dy * dy;
 
       // If the particle is outside the field or movement to small, reset it.
-      if (x < 0 || x > 1 || y < 0 || y > 1 || dist < 0.00000001) {
+      if (x < 0 || x > 1 || y < 0 || y > 1 || dist < 0.00000001 * speed) {
         this.reset(i);
       } else {
         particle[0] = x;

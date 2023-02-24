@@ -1,6 +1,12 @@
 // Uniforms.
 uniform sampler2D field;
 
+// Glpyh data.
+uniform float glyph_grid_size;
+uniform float glyph_size;
+uniform vec3 glyph_color;
+uniform float glyph_alpha;
+
 // Varyings.
 in vec2 texcoord;
 
@@ -45,8 +51,8 @@ void main() {
 
   // Get grid dimensions.
   ivec2 size = textureSize(field, 0);
-  float width = float(size.x);
-  float height = float(size.y);
+  float width = glyph_grid_size;//float(size.x);
+  float height = glyph_grid_size;//float(size.y);
 
   // Determine grid cell.
   vec2 cell = floor(uv * vec2(width, height));
@@ -75,7 +81,7 @@ void main() {
 
 
   // Draw line segment oriented by vector direction in cell.
-  float lineLength = 0.125 * mag;
+  float lineLength = clamp(mag * glyph_size, 0.01, 1.0);
   float lineWidth = 0.05;
   // float lineDist = sdSegment(cellUv, -dir * lineLength, dir * lineLength);
   // float lineCutoff = smoothstep(0.0, lineWidth, lineDist);
@@ -88,7 +94,7 @@ void main() {
 
   float arrow = arrow(cellUv, -dir * lineLength, dir * lineLength, vec2(0.3, 0.25));
   arrow = smoothstep(0.0, lineWidth, arrow);
-  color = mix(vec3(0.0, 0.0, 0.0), color, arrow);
+  color = mix(glyph_color, color, arrow);
 
   // Set output.
   frag_color = vec4(color, alpha);

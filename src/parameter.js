@@ -1,13 +1,6 @@
 export const Parameters = {
-  folder: "./assets/data/",
+  // Dataset parameters.
   datasets: [
-    "center_150x150.csv.gz",
-    "saddle_150x150.csv.gz",
-    //"benzene_150x150.csv.gz"
-    "focus_150x150.csv.gz",
-  ],
-  dataset: "saddle_150x150.csv.gz",
-  generatableFields: [
     "attract",
     "repel",
     "saddle",
@@ -17,8 +10,23 @@ export const Parameters = {
     "hilly_bowl",
     "random",
   ],
-  generatedField: "saddle",
-  defaultFieldSize: 150,
-  scale: 0.25,
-  fps: 60,
+  dataset: "saddle",
+  
+  // Field parameters.
+  fieldSize: 100,
+  fieldSampling: "Nearest",
+
+  // Glyph parameters.
+  glyphGridSize: 10,
+  glyphSize: 0.4,
+  glyphColor: 0x000000,
+  glyphOpacity: 0.5,
+
+  // Particle parameters.
+  particleCount: 100,
+  particleSpeed: 0.1,
+  particleSize: 5.0,
+  particleColor: 0xffffff,
+  particleOpacity: 0.5,
+  particleTrailWidth: 1.0,
 };
