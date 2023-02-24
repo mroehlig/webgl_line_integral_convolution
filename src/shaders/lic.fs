@@ -29,6 +29,16 @@ float sdSegment(vec2 p, vec2 a, vec2 b) {
   return length(pa - ba * h);
 }
 
+float arrow(vec2 p, vec2 a, vec2 b, vec2 size) {
+  vec2 dir = b - a;
+  vec2 dirP = vec2(-dir.y, dir.x);
+
+  float shaft = sdSegment(p, a, b);
+  float head = min(sdSegment(p, b, b - dir * size.x + size.y * dirP),
+                   sdSegment(p, b, b - dir * size.x - size.y * dirP));
+  return min(head, shaft);
+}
+
 // Main.
 void main() {
   vec2 uv = texcoord;
@@ -67,14 +77,18 @@ void main() {
   // Draw line segment oriented by vector direction in cell.
   float lineLength = 0.125 * mag;
   float lineWidth = 0.05;
-  float lineDist = sdSegment(cellUv, -dir * lineLength, dir * lineLength);
-  float lineCutoff = smoothstep(0.0, lineWidth, lineDist);
-  color = mix(vec3(0.0, 0.0, 0.0), color, lineCutoff); 
+  // float lineDist = sdSegment(cellUv, -dir * lineLength, dir * lineLength);
+  // float lineCutoff = smoothstep(0.0, lineWidth, lineDist);
+  // color = mix(vec3(0.0, 0.0, 0.0), color, lineCutoff); 
 
-  // Draw circle at end of line segment.
-  float circle = sdCircle(cellUv - dir * lineLength, lineWidth);
-  circle = smoothstep(0.0, lineWidth, circle);
-  color = mix(vec3(0.0, 0.0, 0.0), color, circle);
+  // // Draw circle at end of line segment.
+  // float circle = sdCircle(cellUv - dir * lineLength, lineWidth);
+  // circle = smoothstep(0.0, lineWidth, circle);
+  // color = mix(vec3(0.0, 0.0, 0.0), color, circle);
+
+  float arrow = arrow(cellUv, -dir * lineLength, dir * lineLength, vec2(0.3, 0.25));
+  arrow = smoothstep(0.0, lineWidth, arrow);
+  color = mix(vec3(0.0, 0.0, 0.0), color, arrow);
 
   // Set output.
   frag_color = vec4(color, alpha);

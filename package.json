@@ -3,13 +3,19 @@
   "version": "1.0.0",
   "description": "Texture-based Flow Visualization with WebGL",
   "main": "index.js",
+  "repository": {
+    "url": "git+https://github.com/mroehlig/webgl_line_integral_convolution.git"
+  },
   "scripts": {
     "release": "webpack --mode production",
-    "develop": "webpack serve --mode development --devtool inline-source-map"
+    "develop": "webpack serve --mode development --devtool inline-source-map",
+    "predeploy": "npm run release",
+    "deploy": "gh-pages -d dist"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^9.0.1",
     "css-loader": "^6.3.0",
+    "gh-pages": "^5.0.0",
     "html-webpack-plugin": "^5.3.2",
     "style-loader": "^3.3.0",
     "webpack": "^5.57.1",

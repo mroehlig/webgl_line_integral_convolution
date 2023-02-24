@@ -1,3 +1,64 @@
+// Object holding different generator functions for 2D vector fields.
+const FieldTypes = {
+  // Random field.
+  random: (x, y) => {
+    return [Math.random() - 0.5, Math.random() - 0.5];
+  },
+
+  // Repelling field.
+  repel: (x, y) => {
+    return [x - 0.5, y - 0.5];
+  },
+
+  // Attractive field.
+  attract: (x, y) => {
+    return [0.5 - x, 0.5 - y];
+  },
+
+  // Saddle field.
+  saddle: (x, y) => {
+    return [x - 0.5, -y + 0.5];
+  },
+
+  // Circle field.
+  circle: (x, y) => {
+    return [y - 0.5, 0.5 - x];
+  },
+
+  // Swirl field.
+  swirl: (x, y) => {
+    x = (x - 0.5) * 4 * Math.PI;
+    y = (y - 0.5) * 4 * Math.PI;
+
+    return [Math.sin(x + y), Math.cos(x - y)];
+  },
+
+  // Hilly bowl field.
+  hilly_bowl: (x, y) => {
+    x = (x - 0.5) * 4 * Math.PI;
+    y = (y - 0.5) * 4 * Math.PI;
+
+    return [0.5, Math.sin(x * x + y * y)];
+  },
+
+  // Vortex field.
+  vortex: (x, y) => {
+    x = (x - 0.5) * 10;
+    y = (y - 0.5) * 10;
+
+    const RADIUS = 3.0,
+      PULL = 0.25;
+
+    let sqSum = Math.max(x * x + y * y, 0.00001);
+    let divisor = !sqSum ? 1 : 1 / Math.sqrt(sqSum);
+    let factor = Math.exp(-sqSum / RADIUS);
+    let u = y * factor * divisor - PULL * x;
+    let v = -x * factor * divisor - PULL * y;
+
+    return [u, v];
+  },
+};
+
 // Class for a 2D vector field on a regular grid.
 export default class Field {
   // Constructor takes an array of vectors and the width and height of the grid.
@@ -8,6 +69,28 @@ export default class Field {
 
     // Store the vectors.
     this.data = data;
+  }
+
+  // Generate a field.
+  static generate(type, width, height) {
+    // Create the field.
+    let field = new Field([], width, height);
+
+    // Generate the field.
+    for (let j = 0; j < height; j++) {
+      for (let i = 0; i < width; i++) {
+        let x = i / width;
+        let y = j / height;
+
+        // Get the vector at the current position.
+        let v = FieldTypes[type](x, y);
+
+        // Set the vector at the current position.
+        field.data[j * width + i] = v;
+      }
+    }
+
+    return field;
   }
 
   // Get the number of vectors in the field.
@@ -65,10 +148,14 @@ export default class Field {
     // Check if the weights sum to zero.
     if (w00 + w01 + w10 + w11 === 0) {
       // Get the four surrounding weights (nearest neighbor interpolation).
-      w00 = x1 - x < x - x0 ? y1 - y < y - y0 ? 1 : 0 : y1 - y < y - y0 ? 0 : 1;
-      w01 = x1 - x < x - x0 ? y1 - y < y - y0 ? 0 : 1 : y1 - y < y - y0 ? 1 : 0;
-      w10 = x1 - x < x - x0 ? y1 - y < y - y0 ? 0 : 1 : y1 - y < y - y0 ? 1 : 0;
-      w11 = x1 - x < x - x0 ? y1 - y < y - y0 ? 1 : 0 : y1 - y < y - y0 ? 0 : 1;
+      w00 =
+        x1 - x < x - x0 ? (y1 - y < y - y0 ? 1 : 0) : y1 - y < y - y0 ? 0 : 1;
+      w01 =
+        x1 - x < x - x0 ? (y1 - y < y - y0 ? 0 : 1) : y1 - y < y - y0 ? 1 : 0;
+      w10 =
+        x1 - x < x - x0 ? (y1 - y < y - y0 ? 0 : 1) : y1 - y < y - y0 ? 1 : 0;
+      w11 =
+        x1 - x < x - x0 ? (y1 - y < y - y0 ? 1 : 0) : y1 - y < y - y0 ? 0 : 1;
     }
 
     // Get the interpolated vector.

@@ -26,36 +26,68 @@ let particles;
 
 // Render the scene.
 function render(time, lastTime) {
-  if (!field) { return; }
+  if (field) {
+    // Update.
+    let dt = time - lastTime;
+    particles.update(fieldResized, dt / 5000);
 
-  // Update.
-  let dt = time - lastTime;
-  particles.update(fieldResized, dt / 100000);
+    // Compute frame rate.
+    let fps = 1000 / (time - lastTime);
+    Parameters.fps = fps.toFixed(2);
 
-  // Render.
-  renderer.render(scene, camera);
+    // Render.
+    renderer.render(scene, camera);
 
-  // Render overlay.
-  overlay.clearRect(0, 0, overlay.canvas.width, overlay.canvas.height);
-  overlay.fillStyle = "white";
-  overlay.font = "20px monospace";
-  overlay.fillText("Particles: " + particles.length, 10, 30);
+    // Render overlay.
+    overlay.clearRect(0, 0, overlay.canvas.width, overlay.canvas.height);
+    overlay.fillStyle = "white";
+    overlay.font = "20px monospace";
+    overlay.fillText("Particles: " + particles.length, 10, 30);
+    overlay.fillText("FPS: " + Parameters.fps, 10, 60);
 
-  // Render particles.
-  overlay.fillStyle = "red";
-  for (let i = 0; i < particles.length; i++) {
-    let particle = particles.get(i);
-    overlay.beginPath();
-
-    // Fill.
+    // Render particles.
     overlay.fillStyle = "red";
-    overlay.arc(particle[0] * overlay.canvas.width, (1 - particle[1]) * overlay.canvas.height, 5, 0, 2 * Math.PI);
-    overlay.fill();
+    for (let i = 0; i < particles.length; i++) {
+      let particle = particles.get(i);
+      overlay.beginPath();
 
-    // Outline.
-    overlay.strokeStyle = "black";
-    overlay.lineWidth = 1;
-    overlay.stroke();
+      // Fill.
+      overlay.fillStyle = "red";
+      overlay.arc(
+        particle[0] * overlay.canvas.width,
+        (1 - particle[1]) * overlay.canvas.height,
+        5,
+        0,
+        2 * Math.PI
+      );
+      overlay.fill();
+
+      // Outline.
+      overlay.strokeStyle = "black";
+      overlay.lineWidth = 1;
+      overlay.stroke();
+
+      // History.
+      let history = particles.getHistory(i);
+      overlay.beginPath();
+
+      // Move to the first point according to the history index.
+      let index = particles.historyIndex;
+      overlay.moveTo(
+        history[index][0] * overlay.canvas.width,
+        (1 - history[index][1]) * overlay.canvas.height
+      );
+      for (let j = 1; j < history.length; j++) {
+        let k = (index + j) % history.length;
+        overlay.lineTo(
+          history[k][0] * overlay.canvas.width,
+          (1 - history[k][1]) * overlay.canvas.height
+        );
+      }
+      overlay.strokeStyle = "rgba(255, 0, 0, 0.5)";
+      overlay.lineWidth = 2;
+      overlay.stroke();
+    }
   }
 
   // Repaint.
@@ -70,13 +102,18 @@ function repaint(lastTime = performance.now()) {
 
 // Resize the canvas.
 function resize() {
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  const { width, height } = overlay.canvas.getBoundingClientRect();
+  renderer.setSize(width, height);
   renderer.setPixelRatio(window.devicePixelRatio);
 
-  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
 
-  repaint();
+  const dpr = window.devicePixelRatio;
+  const displayWidth = Math.round(width * dpr);
+  const displayHeight = Math.round(height * dpr);
+  overlay.canvas.width = displayWidth;
+  overlay.canvas.height = displayHeight;
 }
 
 // Update the field.
@@ -84,33 +121,43 @@ function updateData(data, width, height) {
   // Create and update the field.
   field = new Field(data, width, height);
   updateTexture(field.data, width, height);
-  
-  resizeField(Parameters.scale);
 
-  repaint()
+  resizeField(Parameters.scale);
+}
+
+// Generate a field.
+function generateData(type) {
+  // Create and update the field.
+  field = Field.generate(
+    type,
+    Parameters.defaultFieldSize,
+    Parameters.defaultFieldSize
+  );
+  updateTexture(field.data, field.width, field.height);
+
+  resizeField(Parameters.scale);
 }
 
 // Update the texture.
 function updateTexture(data, width, height) {
-    // Create the texture.
-    let texture = new THREE.DataTexture(
-      new Float32Array(data.flat()),
-      width,
-      height,
-      THREE.RGFormat,
-      THREE.FloatType
-    );
-     texture.minFilter = THREE.LinearFilter;
-     texture.magFilter = THREE.LinearFilter;
-    // texture.wrapS = THREE.ClampToEdgeWrapping;
-    // texture.wrapT = THREE.ClampToEdgeWrapping;
-    texture.needsUpdate = true;
-  
-    // Update the quad.
-    quad.material.uniforms.field.value = texture;
-    quad.material.needsUpdate = true;
-}
+  // Create the texture.
+  let texture = new THREE.DataTexture(
+    new Float32Array(data.flat()),
+    width,
+    height,
+    THREE.RGFormat,
+    THREE.FloatType
+  );
+  // texture.minFilter = THREE.LinearFilter;
+  // texture.magFilter = THREE.LinearFilter;
+  // texture.wrapS = THREE.ClampToEdgeWrapping;
+  // texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.needsUpdate = true;
 
+  // Update the quad.
+  quad.material.uniforms.field.value = texture;
+  quad.material.needsUpdate = true;
+}
 
 // Resize the field.
 function resizeField(scale) {
@@ -120,8 +167,6 @@ function resizeField(scale) {
   // Create and update the field.
   fieldResized = field.resize(width, height);
   updateTexture(fieldResized.data, width, height);
-  
-  repaint();
 }
 
 // Initialize.
@@ -166,7 +211,7 @@ function init() {
       vertexShader: VertexShaderSource,
       fragmentShader: FragmentShaderSource,
       uniforms: {
-        field: { value: null }
+        field: { value: null },
       },
       depthWrite: false,
       depthTest: false,
@@ -176,12 +221,18 @@ function init() {
 
   // Create the GUI.
   const gui = new GUI();
-  gui
+  let dataFolder = gui.addFolder("Data");
+  dataFolder
+    .add(Parameters, "generatableFields", [...Parameters.generatableFields])
+    .setValue(Parameters.generatedField)
+    .name("Generate")
+    .onChange((name) => generateData(name));
+  dataFolder
     .add(Parameters, "dataset", [...Parameters.datasets])
     .setValue(Parameters.dataset)
-    .name("Data")
+    .name("Load")
     .onChange((name) => loadData(Parameters.folder + name, updateData));
-  
+
   // Add controls for scaling the field.
   gui
     .add(Parameters, "scale", 0.1, 4.0)
@@ -189,11 +240,15 @@ function init() {
     .name("Scale")
     .onChange(resizeField);
 
-  // Load the data.  
+  // Load the data.
   loadData(Parameters.folder + Parameters.dataset, updateData);
-    
+
   // Create the particles.
   particles = new Particles(100);
+
+  // Start the animation.
+  resize();
+  repaint();
 }
 
 // Add event listeners for load and resize.

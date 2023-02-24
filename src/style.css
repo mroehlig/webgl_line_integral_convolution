@@ -4,12 +4,14 @@ body {
 }
 
 #content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: black;
   z-index: 0;
 }
 
 #canvas_wrapper {
-  margin-right: 10px;
   width: 800px;
   height: 800px;
 }
