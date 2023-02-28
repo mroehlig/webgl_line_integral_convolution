@@ -1,79 +1,79 @@
-// Vector math 2D library for manipulating arrays of two numbers.
-export function create(x, y) {
-  return [x, y];
-}
+// A class representing a 2D vector.
+export default class Vector2d {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
 
-export function clone(v) {
-  return [v[0], v[1]];
-}
+  // Set the vector.
+  set(x, y) {
+    this.x = x;
+    this.y = y;
+  }
 
-export function copy(v, out) {
-  out[0] = v[0];
-  out[1] = v[1];
-  return out;
-}
+  // Get the length of the vector.
+  length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
 
-export function set(x, y, out) {
-  out[0] = x;
-  out[1] = y;
-  return out;
-}
+  // Get the length of the vector.
+  lengthSquared() {
+    return this.x * this.x + this.y * this.y;
+  }
 
-export function add(v, w, out) {
-  out[0] = v[0] + w[0];
-  out[1] = v[1] + w[1];
-  return out;
-}
+  // Get the normalized vector.
+  normalize() {
+    let length = this.length();
+    return new Vector2d(this.x / length, this.y / length);
+  }
 
-export function subtract(v, w, out) {
-  out[0] = v[0] - w[0];
-  out[1] = v[1] - w[1];
-  return out;
-}
+  // Get the negative vector.
+  negate() {
+    return new Vector2d(-this.x, -this.y);
+  }
 
-export function multiply(v, w, out) {
-  out[0] = v[0] * w[0];
-  out[1] = v[1] * w[1];
-  return out;
-}
+  // Get the sum of two vectors.
+  add(vector) {
+    return new Vector2d(this.x + vector.x, this.y + vector.y);
+  }
 
-export function divide(v, w, out) {
-  out[0] = v[0] / w[0];
-  out[1] = v[1] / w[1];
-  return out;
-}
+  // Get the difference of two vectors.
+  subtract(vector) {
+    return new Vector2d(this.x - vector.x, this.y - vector.y);
+  }
 
-export function scale(v, s, out) {
-  out[0] = v[0] * s;
-  out[1] = v[1] * s;
-  return out;
-}
+  // Get the product of a vector and a scalar.
+  multiplyScalar(scalar) {
+    return new Vector2d(this.x * scalar, this.y * scalar);
+  }
 
-export function negate(v, out) {
-  out[0] = -v[0];
-  out[1] = -v[1];
-  return out;
-}
+  // Get the dot product of two vectors.
+  dot(vector) {
+    return this.x * vector.x + this.y * vector.y;
+  }
 
-export function dot(v, w) {
-  return v[0] * w[0] + v[1] * w[1];
-}
+  // Get the cross product of two vectors.
+  cross(vector) {
+    return this.x * vector.y - this.y * vector.x;
+  }
 
-export function cross(v, w) {
-  return v[0] * w[1] - v[1] * w[0];
-}
+  // Get the angle between two vectors.
+  angle(vector) {
+    return Math.acos(this.dot(vector) / (this.length() * vector.length()));
+  }
 
-export function length(v) {
-  return Math.sqrt(v[0] * v[0] + v[1] * v[1]);
-}
+  // Get the distance between two vectors.
+  distance(vector) {
+    return this.subtract(vector).length();
+  }
 
-export function squaredLength(v) {
-  return v[0] * v[0] + v[1] * v[1];
-}
+  // Get the distance between two vectors.
+  distanceSquared(vector) {
+    return this.subtract(vector).lengthSquared();
+  }
 
-export function normalize(v, out) {
-  let len = length(v);
-  out[0] = v[0] / len;
-  out[1] = v[1] / len;
-  return out;
-}
+  // Get the vector as a string.
+  toString() {
+    return `(${this.x}, ${this.y})`;
+  }
+}	

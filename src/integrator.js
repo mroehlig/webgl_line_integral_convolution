@@ -1,5 +1,5 @@
 import { Streamline } from "./streamline.js";
-import * as vec2 from "./vector2d.js";
+import Vector2d from "./vector2d.js";
 
 // A class for integrating streamlines through a vector field using the Runge-Kutta method.
 export default class Integrator {
@@ -52,17 +52,17 @@ export default class Integrator {
     }
 
     // Integrate the streamline.
-    let k1 = velocity.clone().multiplyScalar(this.stepSize);
-    let k2 = this.field
-      .getVelocity(position.clone().add(k1.clone().multiplyScalar(0.5)))
+    let k1 = velocity.clone().multiplyScalar(tmp, this.stepSize, tmp);
+    let k2 = field
+      .getInterpolated(position.clone().add(k1.clone().multiplyScalar(0.5)))
       .clone()
       .multiplyScalar(this.stepSize);
     let k3 = this.field
-      .getVelocity(position.clone().add(k2.clone().multiplyScalar(0.5)))
+      .getInterpolated(position.clone().add(k2.clone().multiplyScalar(0.5)))
       .clone()
       .multiplyScalar(this.stepSize);
     let k4 = this.field
-      .getVelocity(position.clone().add(k3))
+      .getInterpolated(position.clone().add(k3))
       .clone()
       .multiplyScalar(this.stepSize);
     let delta = k1
@@ -109,9 +109,9 @@ export default class Integrator {
     // Integrate the streamlines.
     let streamlines = [];
     for (let i = 0; i < count; i++) {
-      let start = new Vector2(Math.random(), Math.random());
+      let start = new Vector2d(Math.random(), Math.random());
       let angle = Math.random() * 2 * Math.PI;
-      let direction = new Vector2(Math.cos(angle), Math.sin(angle));
+      let direction = new Vector2d(Math.cos(angle), Math.sin(angle));
       streamlines.push(
         this.integrate(field, start, direction)
       );

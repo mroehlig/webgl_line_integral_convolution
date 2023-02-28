@@ -1,3 +1,5 @@
+import Vector2d from "./vector2d";
+
 // A particle simulation class.
 export default class Particles {
   // Constructor initializes the particles with random positions.
@@ -12,11 +14,11 @@ export default class Particles {
     for (let i = 0; i < count; i++) {
       let x = Math.random();
       let y = Math.random();
-      this.particles.push([x, y]);
+      this.particles.push(new Vector2d(x, y));
       this.history.push([]);
 
       for (let j = 0; j < historyLength; j++) {
-        this.history[i].push([x, y]);
+        this.history[i].push(new Vector2d(x, y));
       }
     }
   }
@@ -40,11 +42,11 @@ export default class Particles {
   reset(index) {
     let x = Math.random();
     let y = Math.random();
-    this.particles[index] = [x, y];
+    this.particles[index].set(x, y);
 
     // Reset the history.
     for (let i = 0; i < this.historyLength; i++) {
-      this.history[index][i] = [x, y];
+      this.history[index][i].set(x, y);
     }
   }
 
@@ -63,28 +65,26 @@ export default class Particles {
 
       // Get the vector at the particle's position.
       let vector = field.getInterpolated(
-        particle[0] * field.width,
-        particle[1] * field.height
+        particle.x * field.width,
+        particle.y * field.height
       );
 
       // Update the particle's position.
-      let x = particle[0] + vector[0] * dt * speed;
-      let y = particle[1] + vector[1] * dt * speed;
-      let dx = x - particle[0];
-      let dy = y - particle[1];
+      let x = particle.x + vector.x * dt * speed;
+      let y = particle.y + vector.y * dt * speed;
+      let dx = x - particle.x;
+      let dy = y - particle.y;
       let dist = dx * dx + dy * dy;
 
       // If the particle is outside the field or movement to small, reset it.
       if (x < 0 || x > 1 || y < 0 || y > 1 || dist < 0.00000001 * speed) {
         this.reset(i);
       } else {
-        particle[0] = x;
-        particle[1] = y;
+        particle.set(x, y);
 
         // Update the history.
         let history = this.getHistory(i)[this.historyIndex];
-        history[0] = x;
-        history[1] = y;
+        history.set(x, y);
       }
     }
 

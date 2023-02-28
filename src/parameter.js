@@ -14,15 +14,22 @@ export const Parameters = {
   
   // Field parameters.
   fieldSize: 100,
-  fieldSampling: "Nearest",
+  fieldColorings: ["Direction", "Magnitude", "None"],
+  fieldColoring: "Direction",
+  getFieldColoringIndex: function() {
+    return this.fieldColorings.indexOf(this.fieldColoring);
+  },
+  fieldSampling: "Linear", // "Nearest", "Linear"
 
   // Glyph parameters.
-  glyphGridSize: 10,
+  glyphVisible: true,
+  glyphGridSize: 20,
   glyphSize: 0.4,
   glyphColor: 0x000000,
   glyphOpacity: 0.5,
 
   // Particle parameters.
+  particleVisible: true,
   particleCount: 100,
   particleSpeed: 0.1,
   particleSize: 5.0,

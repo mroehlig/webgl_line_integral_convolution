@@ -1,28 +1,30 @@
+import Vector2d from "./vector2d";
+
 // Object holding different generator functions for 2D vector fields.
 const FieldTypes = {
   // Random field.
   random: (x, y) => {
-    return [Math.random() - 0.5, Math.random() - 0.5];
+    return new Vector2d(Math.random() - 0.5, Math.random() - 0.5);
   },
 
   // Repelling field.
   repel: (x, y) => {
-    return [x - 0.5, y - 0.5];
+    return new Vector2d(x - 0.5, y - 0.5);
   },
 
   // Attractive field.
   attract: (x, y) => {
-    return [0.5 - x, 0.5 - y];
+    return new Vector2d(0.5 - x, 0.5 - y);
   },
 
   // Saddle field.
   saddle: (x, y) => {
-    return [x - 0.5, -y + 0.5];
+    return new Vector2d(x - 0.5, -y + 0.5);
   },
 
   // Circle field.
   circle: (x, y) => {
-    return [y - 0.5, 0.5 - x];
+    return new Vector2d(y - 0.5, 0.5 - x);
   },
 
   // Swirl field.
@@ -30,7 +32,7 @@ const FieldTypes = {
     x = (x - 0.5) * 4 * Math.PI;
     y = (y - 0.5) * 4 * Math.PI;
 
-    return [Math.sin(x + y), Math.cos(x - y)];
+    return new Vector2d(Math.sin(x + y), Math.cos(x - y));
   },
 
   // Hilly bowl field.
@@ -38,7 +40,7 @@ const FieldTypes = {
     x = (x - 0.5) * 4 * Math.PI;
     y = (y - 0.5) * 4 * Math.PI;
 
-    return [0.5, Math.sin(x * x + y * y)];
+    return new Vector2d(0.5, Math.sin(x * x + y * y));
   },
 
   // Vortex field.
@@ -55,7 +57,7 @@ const FieldTypes = {
     let u = y * factor * divisor - PULL * x;
     let v = -x * factor * divisor - PULL * y;
 
-    return [u, v];
+    return new Vector2d(u, v);
   },
 };
 
@@ -145,24 +147,23 @@ export default class Field {
     // let w10 = (x - x0) * (y1 - y) * (x - x0) * (y1 - y);
     // let w11 = (x - x0) * (y - y0) * (x - x0) * (y - y0);
 
-    // Check if the weights sum to zero.
-    if (w00 + w01 + w10 + w11 === 0) {
-      // Get the four surrounding weights (nearest neighbor interpolation).
-      w00 =
-        x1 - x < x - x0 ? (y1 - y < y - y0 ? 1 : 0) : y1 - y < y - y0 ? 0 : 1;
-      w01 =
-        x1 - x < x - x0 ? (y1 - y < y - y0 ? 0 : 1) : y1 - y < y - y0 ? 1 : 0;
-      w10 =
-        x1 - x < x - x0 ? (y1 - y < y - y0 ? 0 : 1) : y1 - y < y - y0 ? 1 : 0;
-      w11 =
-        x1 - x < x - x0 ? (y1 - y < y - y0 ? 1 : 0) : y1 - y < y - y0 ? 0 : 1;
+    // Get the interpolated vector.
+    let v0 = v00.x * w00 + v01.x * w01 + v10.x * w10 + v11.x * w11;
+    let v1 = v00.y * w00 + v01.y * w01 + v10.y * w10 + v11.y * w11;
+
+    return new Vector2d(v0, v1);
+  }
+
+  // Get data as flat array.
+  getFlat() {
+    let flat = [];
+
+    for (let i = 0; i < this.length; i++) {
+      let v = this.get(i);
+      flat.push(v.x, v.y);
     }
 
-    // Get the interpolated vector.
-    let v0 = v00[0] * w00 + v01[0] * w01 + v10[0] * w10 + v11[0] * w11;
-    let v1 = v00[1] * w00 + v01[1] * w01 + v10[1] * w10 + v11[1] * w11;
-
-    return [v0, v1];
+    return flat;
   }
 
   // Get resized field.

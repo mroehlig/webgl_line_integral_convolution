@@ -1,7 +1,11 @@
 // Uniforms.
 uniform sampler2D field;
 
+// Field data.
+uniform float field_coloring;
+
 // Glpyh data.
+uniform float glyph_visible;
 uniform float glyph_grid_size;
 uniform float glyph_size;
 uniform vec3 glyph_color;
@@ -45,6 +49,19 @@ float arrow(vec2 p, vec2 a, vec2 b, vec2 size) {
   return min(head, shaft);
 }
 
+vec3 coloring(vec2 data) {
+  vec3 color = vec3(0.0, 0.0, 0.0);
+  if (field_coloring == 0.0) {
+    // Direction.
+    color = vec3(data * 0.5 + 0.5, 0.0);
+  } else if (field_coloring == 1.0) {
+    // Magnitude.
+    color = vec3(length(data));
+  }
+
+  return color;
+}
+
 // Main.
 void main() {
   vec2 uv = texcoord;
@@ -70,7 +87,7 @@ void main() {
   float alpha = 1.0;
 
   // Assign color based on direction.
-  color = vec3(dir * 0.5 + 0.5, 0.0);
+  color = coloring(data);
   //color = vec3(1.0);
 
   // Draw grid lines.
@@ -94,7 +111,7 @@ void main() {
 
   float arrow = arrow(cellUv, -dir * lineLength, dir * lineLength, vec2(0.3, 0.25));
   arrow = smoothstep(0.0, lineWidth, arrow);
-  color = mix(glyph_color, color, arrow);
+  color = mix(glyph_color, color, max(arrow, 1.0 - glyph_visible));
 
   // Set output.
   frag_color = vec4(color, alpha);
