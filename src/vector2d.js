@@ -5,6 +5,11 @@ export default class Vector2d {
     this.y = y;
   }
 
+  // Clone the vector.
+  clone() {
+    return new Vector2d(this.x, this.y);
+  }
+
   // Set the vector.
   set(x, y) {
     this.x = x;
@@ -76,4 +81,4 @@ export default class Vector2d {
   toString() {
     return `(${this.x}, ${this.y})`;
   }
-}	
+}

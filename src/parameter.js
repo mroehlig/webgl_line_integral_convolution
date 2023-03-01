@@ -11,12 +11,12 @@ export const Parameters = {
     "random",
   ],
   dataset: "saddle",
-  
+
   // Field parameters.
   fieldSize: 100,
   fieldColorings: ["Direction", "Magnitude", "None"],
   fieldColoring: "Direction",
-  getFieldColoringIndex: function() {
+  getFieldColoringIndex: function () {
     return this.fieldColorings.indexOf(this.fieldColoring);
   },
   fieldSampling: "Linear", // "Nearest", "Linear"
@@ -36,4 +36,11 @@ export const Parameters = {
   particleColor: 0xffffff,
   particleOpacity: 0.5,
   particleTrailWidth: 1.0,
+
+  // Streamline parameters.
+  streamlineCount: 100,
+  integratorStepSize: 0.01,
+  integratorMinSteps: 100,
+  integratorMaxSteps: 1000,
+  integratorTolerance: 0.0001,
 };

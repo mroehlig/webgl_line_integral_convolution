@@ -1,12 +1,12 @@
-import { Streamline } from "./streamline.js";
+import Streamline from "./streamline.js";
 import Vector2d from "./vector2d.js";
 
 // A class for integrating streamlines through a vector field using the Runge-Kutta method.
 export default class Integrator {
-  constructor(stepSize, maxSteps, minSteps, tolerance) {
+  constructor(stepSize, minSteps, maxSteps, tolerance) {
     this.stepSize = stepSize;
-    this.maxSteps = maxSteps;
     this.minSteps = minSteps;
+    this.maxSteps = maxSteps;
     this.tolerance = tolerance;
   }
 
@@ -22,10 +22,12 @@ export default class Integrator {
 
       // Check if the streamline is valid, has reached the boundary,
       // has reached the end, or has reached the minimum number of steps and has converged.
-      if (!streamline.valid
-        || streamline.reachedBoundary
-        || streamline.reachedEnd
-        || (i >= this.minSteps && streamline.converged)) {
+      if (
+        !streamline.valid ||
+        streamline.reachedBoundary ||
+        streamline.reachedEnd ||
+        (i >= this.minSteps && streamline.converged)
+      ) {
         break;
       }
     }
@@ -43,7 +45,7 @@ export default class Integrator {
     let direction = streamline.direction;
 
     // Get the streamline velocity.
-    let velocity = field.getInterpolated(position);
+    let velocity = field.getInterpolated(position.x, position.y);
 
     // Check if the streamline is valid.
     if (velocity.length() == 0) {
@@ -52,17 +54,20 @@ export default class Integrator {
     }
 
     // Integrate the streamline.
-    let k1 = velocity.clone().multiplyScalar(tmp, this.stepSize, tmp);
+    let k1 = velocity.clone().multiplyScalar(this.stepSize);
+    let tmp = position.clone().add(k1.clone().multiplyScalar(0.5));
     let k2 = field
-      .getInterpolated(position.clone().add(k1.clone().multiplyScalar(0.5)))
+      .getInterpolated(tmp.x, tmp.y)
       .clone()
       .multiplyScalar(this.stepSize);
-    let k3 = this.field
-      .getInterpolated(position.clone().add(k2.clone().multiplyScalar(0.5)))
+    tmp = position.clone().add(k2.clone().multiplyScalar(0.5));
+    let k3 = field
+      .getInterpolated(tmp.x, tmp.y)
       .clone()
       .multiplyScalar(this.stepSize);
-    let k4 = this.field
-      .getInterpolated(position.clone().add(k3))
+    tmp = position.clone().add(k3);
+    let k4 = field
+      .getInterpolated(tmp.x, tmp.y)
       .clone()
       .multiplyScalar(this.stepSize);
     let delta = k1
@@ -109,12 +114,13 @@ export default class Integrator {
     // Integrate the streamlines.
     let streamlines = [];
     for (let i = 0; i < count; i++) {
-      let start = new Vector2d(Math.random(), Math.random());
+      let start = new Vector2d(
+        Math.random() * field.width,
+        Math.random() * field.height
+      );
       let angle = Math.random() * 2 * Math.PI;
       let direction = new Vector2d(Math.cos(angle), Math.sin(angle));
-      streamlines.push(
-        this.integrate(field, start, direction)
-      );
+      streamlines.push(this.integrate(field, start, direction));
     }
 
     // Return the streamlines.

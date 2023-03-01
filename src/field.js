@@ -118,11 +118,6 @@ export default class Field {
     let y0 = Math.floor(y);
     let y1 = Math.ceil(Math.min(y, this.height - 1));
 
-    // // If the coordinates are the same, return the vector at that coordinate.
-    // if (x0 === x1 && y0 === y1) {
-    //   return this.getAt(x0, y0);
-    // }
-
     // Get the four surrounding vectors.
     let v00 = this.getAt(x0, y0);
     let v01 = this.getAt(x0, y1);

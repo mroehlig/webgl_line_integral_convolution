@@ -9,6 +9,8 @@ import { Parameters } from "./parameter";
 import { loadData } from "./data";
 import Field from "./field";
 import Particles from "./particle";
+import Integrator from "./integrator";
+import { renderLIC } from "./fastlic";
 
 import VertexShaderSource from "./shaders/field.vs";
 import FragmentShaderSource from "./shaders/field.fs";
@@ -23,6 +25,8 @@ let scene;
 let quad;
 let field;
 let particles;
+let integrator;
+let streamlines;
 let stats;
 
 // Render the scene.
@@ -36,6 +40,8 @@ function render(time, lastTime) {
   // Render.
   renderer.render(scene, camera);
   renderParticles();
+
+  renderLIC(overlay, streamlines);
 
   stats.end();
 
@@ -194,6 +200,21 @@ function updateUniforms() {
   quad.material.uniforms.glyph_alpha.value = Parameters.glyphOpacity;
   quad.material.uniforms.glyph_color.value = new THREE.Color(
     Parameters.glyphColor
+  );
+}
+
+// Update the integrator.
+function updateIntegrator() {
+  integrator = new Integrator(
+    Parameters.integratorStepSize,
+    Parameters.integratorMinSteps,
+    Parameters.integratorMaxSteps,
+    Parameters.integratorTolerance
+  );
+
+  streamlines = integrator.integrateRandomStreamlines(
+    field,
+    Parameters.streamlineCount
   );
 }
 
@@ -359,7 +380,14 @@ function init() {
     .setValue(Parameters.particleCount)
     .name("Count")
     .onChange((count) => (particles = new Particles(count)));
-  particleFolder.add({ Reset: () => { particles.resetAll() } }, "Reset"); 
+  particleFolder.add(
+    {
+      Reset: () => {
+        particles.resetAll();
+      },
+    },
+    "Reset"
+  );
   particleFolder
     .add(Parameters, "particleSpeed", 0.0, 4.0)
     .step(0.01)
@@ -389,6 +417,9 @@ function init() {
 
   // Create the particles.
   particles = new Particles(100);
+
+  // Create the integrator.
+  updateIntegrator();
 
   // Start the animation.
   resize();
