@@ -61,6 +61,12 @@ const FieldTypes = {
   },
 };
 
+// Interpolation functions for 2D vector fields.
+export function nearest(out) {
+  // Return weights.
+  return [1, 0, 0, 0];
+}
+
 // Class for a 2D vector field on a regular grid.
 export default class Field {
   // Constructor takes an array of vectors and the width and height of the grid.
@@ -110,45 +116,6 @@ export default class Field {
     return this.get(y * this.width + x);
   }
 
-  // Get the interpolated vector at the given x and y coordinates.
-  getInterpolated(x, y) {
-    // Get the four surrounding coordinates.
-    let x0 = Math.floor(x);
-    let x1 = Math.ceil(Math.min(x, this.width - 1));
-    let y0 = Math.floor(y);
-    let y1 = Math.ceil(Math.min(y, this.height - 1));
-
-    // Get the four surrounding vectors.
-    let v00 = this.getAt(x0, y0);
-    let v01 = this.getAt(x0, y1);
-    let v10 = this.getAt(x1, y0);
-    let v11 = this.getAt(x1, y1);
-
-    // Get the four surrounding weights (bilinear interpolation).
-    let w00 = (x1 - x) * (y1 - y);
-    let w01 = (x1 - x) * (y - y0);
-    let w10 = (x - x0) * (y1 - y);
-    let w11 = (x - x0) * (y - y0);
-
-    // // Get the four surrounding weights (bicubic interpolation).
-    // let w00 = (x1 - x) * (y1 - y) * (x1 - x) * (y1 - y);
-    // let w01 = (x1 - x) * (y - y0) * (x1 - x) * (y - y0);
-    // let w10 = (x - x0) * (y1 - y) * (x - x0) * (y1 - y);
-    // let w11 = (x - x0) * (y - y0) * (x - x0) * (y - y0);
-
-    // // Get the four surrounding weights (biquadratic interpolation).
-    // let w00 = (x1 - x) * (y1 - y) * (x1 - x) * (y1 - y);
-    // let w01 = (x1 - x) * (y - y0) * (x1 - x) * (y - y0);
-    // let w10 = (x - x0) * (y1 - y) * (x - x0) * (y1 - y);
-    // let w11 = (x - x0) * (y - y0) * (x - x0) * (y - y0);
-
-    // Get the interpolated vector.
-    let v0 = v00.x * w00 + v01.x * w01 + v10.x * w10 + v11.x * w11;
-    let v1 = v00.y * w00 + v01.y * w01 + v10.y * w10 + v11.y * w11;
-
-    return new Vector2d(v0, v1);
-  }
-
   // Get data as flat array.
   getFlat() {
     let flat = [];
@@ -174,7 +141,7 @@ export default class Field {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         // Get the vector at the current position.
-        let v = this.getInterpolated(x * scaleX, y * scaleY);
+        let v = this.sample(x * scaleX, y * scaleY);
 
         // Set the vector at the current position.
         field.data[y * width + x] = v;
@@ -182,5 +149,38 @@ export default class Field {
     }
 
     return field;
+  }
+
+  // Get the interpolated vector at the given x and y coordinates.
+  sample(x, y) {
+    // Get the four surrounding coordinates.
+    let x0 = Math.floor(x);
+    let x1 = Math.ceil(Math.min(x, this.width - 1));
+    let y0 = Math.floor(y);
+    let y1 = Math.ceil(Math.min(y, this.height - 1));
+
+    // Get the four surrounding vectors.
+    let v00 = this.getAt(x0, y0);
+    let v01 = this.getAt(x0, y1);
+    let v10 = this.getAt(x1, y0);
+    let v11 = this.getAt(x1, y1);
+
+    // Get the four surrounding weights (bilinear interpolation).
+    let w00 = (x1 - x) * (y1 - y);
+    let w01 = (x1 - x) * (y - y0);
+    let w10 = (x - x0) * (y1 - y);
+    let w11 = (x - x0) * (y - y0);
+
+    // // Get the four surrounding weights (bicubic interpolation).
+    // let w00 = (x1 - x) * (y1 - y) * (x1 - x) * (y1 - y);
+    // let w01 = (x1 - x) * (y - y0) * (x1 - x) * (y - y0);
+    // let w10 = (x - x0) * (y1 - y) * (x - x0) * (y1 - y);
+    // let w11 = (x - x0) * (y - y0) * (x - x0) * (y - y0)
+
+    // Get the interpolated vector.
+    let v0 = v00.x * w00 + v01.x * w01 + v10.x * w10 + v11.x * w11;
+    let v1 = v00.y * w00 + v01.y * w01 + v10.y * w10 + v11.y * w11;
+
+    return new Vector2d(v0, v1);
   }
 }

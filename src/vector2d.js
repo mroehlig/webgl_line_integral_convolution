@@ -1,84 +1,82 @@
-// A class representing a 2D vector.
-export default class Vector2d {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-  }
+// Clone the vector.
+export function clone(v) {
+  return v.slice();
+}
 
-  // Clone the vector.
-  clone() {
-    return new Vector2d(this.x, this.y);
-  }
+// Set the vector.
+export function set(x, y, v) {
+  v[0] = x;
+  v[1] = y;
+  return v;
+}
 
-  // Set the vector.
-  set(x, y) {
-    this.x = x;
-    this.y = y;
-  }
+// Get the length of the vector.
+export function length(v) {
+  return Math.sqrt(v[0] * v[0] + v[1] * v[1]);
+}
 
-  // Get the length of the vector.
-  length() {
-    return Math.sqrt(this.x * this.x + this.y * this.y);
-  }
+// Get the squared length of the vector.
+export function lengthSqr(v) {
+  return v[0] * v[0] + v[1] * v[1];
+}
 
-  // Get the length of the vector.
-  lengthSquared() {
-    return this.x * this.x + this.y * this.y;
-  }
+// Normalize the vector.
+export function normalize(v) {
+  let length = length(v);
+  v[0] /= length;
+  v[1] /= length;
+  return v;
+}
 
-  // Get the normalized vector.
-  normalize() {
-    let length = this.length();
-    return new Vector2d(this.x / length, this.y / length);
-  }
+// Negate the vector.
+export function negate(v) {
+  v[0] = -v[0];
+  v[1] = -v[1];
+  return v;
+}
 
-  // Get the negative vector.
-  negate() {
-    return new Vector2d(-this.x, -this.y);
-  }
+// Add second vector to first vector.
+export function add(v, other) {
+  v[0] += other[0];
+  v[1] += other[1];
+  return v;
+}
 
-  // Get the sum of two vectors.
-  add(vector) {
-    return new Vector2d(this.x + vector.x, this.y + vector.y);
-  }
+// Subtract second vector from first vector.
+export function subtract(v, other) {
+  v[0] -= other[0];
+  v[1] -= other[1];
+  return v;
+}
 
-  // Get the difference of two vectors.
-  subtract(vector) {
-    return new Vector2d(this.x - vector.x, this.y - vector.y);
-  }
+// Scale the vector.
+export function scale(scalar) {
+  v[0] *= scalar;
+  v[1] *= scalar;
+  return v;
+}
 
-  // Get the product of a vector and a scalar.
-  multiplyScalar(scalar) {
-    return new Vector2d(this.x * scalar, this.y * scalar);
-  }
+// Get the dot product of two vectors.
+export function dot(a, b) {
+  return a[0] * b[0] + a[1] * b[1];
+}
 
-  // Get the dot product of two vectors.
-  dot(vector) {
-    return this.x * vector.x + this.y * vector.y;
-  }
+// Get the cross product of two vectors.
+export function cross(a, b) {
+  return a[0] * b[1] - a[1] * b[0];
+}
 
-  // Get the cross product of two vectors.
-  cross(vector) {
-    return this.x * vector.y - this.y * vector.x;
-  }
+// Get the angle between two vectors.
+export function angle(a, b) {
+  return Math.acos(dot(a, b) / (length(a) * length(b)));
+}
 
-  // Get the angle between two vectors.
-  angle(vector) {
-    return Math.acos(this.dot(vector) / (this.length() * vector.length()));
-  }
+// Get the distance between two vectors.
+export function distance(a, b) {
+  return length(subtract(clone(a), b));
+}
 
-  // Get the distance between two vectors.
-  distance(vector) {
-    return this.subtract(vector).length();
-  }
-
-  // Get the distance between two vectors.
-  distanceSquared(vector) {
-    return this.subtract(vector).lengthSquared();
-  }
-
-  // Get the vector as a string.
-  toString() {
-    return `(${this.x}, ${this.y})`;
-  }
+// Get the distance between two vectors.
+export function distanceSqr(vector) {
+  return lengthSqr(subtract(clone(a), b));
 }
